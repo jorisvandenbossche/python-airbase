@@ -26,6 +26,23 @@ def read_file(filename):
 
     return data
 
+def read_daily(filename):
+    _, fname = os.path.split(filename)
+    station = fname[:7]
+    colnames = ['date'] + [item for pair in zip(["{:02d}".format(i) for i in range(1, 32)], ['flag']*31) for item in pair]
+    data = pd.read_csv(filename, sep='\t', header=None, index_col=['date'],
+                       na_values=[-999, -9999, -99.99], names=colnames)
+
+    # for now, drop the flags
+    data = data.drop('flag', axis=1)
+
+    data = data.stack()
+    data = data.reset_index(name=station)
+    data.index = pd.to_datetime(data['date']) + pd.TimedeltaIndex(data['level_1'].astype(float), unit='D')
+    data = data.drop(['date', 'level_1'], axis=1)
+
+    return data
+
 
 if __name__ == '__main__':
 
