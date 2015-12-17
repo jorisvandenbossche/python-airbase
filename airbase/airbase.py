@@ -12,19 +12,22 @@ import pandas as pd
 def read_file(filename):
     _, fname = os.path.split(filename)
     station = fname[:7]
-    colnames = ['date'] + [item for pair in zip(["{:02d}".format(i) for i in range(24)], ['flag']*24) for item in pair]
-    data = pd.read_csv(filename, sep='\t', header=None, index_col=['date'],
-                       na_values=[-999, -9999], names=colnames)
 
-    # for now, drop the flags
-    data = data.drop('flag', axis=1)
+    data = pd.read_csv(filename, sep='\t', header=None, index_col=0,
+                       na_values=[-999, -9999])
 
-    data = data.stack()
-    data = data.reset_index(name=station)
+    # set more informative index
+    data.index.name = 'date'
+    data.columns = pd.MultiIndex.from_product([list("{:02d}".format(i) for i in range(24)),
+                                              ['value', 'flag']])
+
+    data = data.stack(level=0)
+    data = data.reset_index()
     data.index = pd.to_datetime(data['date'] + ' ' + data['level_1'])
     data = data.drop(['date', 'level_1'], axis=1)
 
     return data
+
 
 def read_daily(filename):
     _, fname = os.path.split(filename)
